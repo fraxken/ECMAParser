@@ -1,6 +1,8 @@
+const U8_LEN = 255;
+
 class BufferString {
     constructor() {
-        this.u8Arr = new Uint8Array(255);
+        this.u8Arr = new Uint8Array(U8_LEN);
         this.currLen = 0;
     }
 
@@ -13,6 +15,20 @@ class BufferString {
         this.currLen++;
     }
 
+    compare(u8) {
+        if (this.currLen === 0 || this.currLen !== u8.byteLength) {
+            return false;
+        }
+    
+        for (let i = 0; i < this.currLen; i++) {
+            if (this.u8Arr[i] !== u8[i]) {
+                return false;
+            }
+        }
+    
+        return true;
+    }
+
     get currValue() {
         if (this.currLen === 0) {
             return null;
@@ -22,7 +38,7 @@ class BufferString {
     }
 
     reset() {
-        this.u8Arr = new Uint8Array(255);
+        this.u8Arr = new Uint8Array(U8_LEN);
         this.currLen = 0;
     }
 }

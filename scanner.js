@@ -2,27 +2,13 @@
 const { readFileSync } = require("fs");
 
 // Require Internal Dependencies
-const { ASCIISet, stringToChar, compareU8Arr } = require("./src/utils");
+const { ASCIISet, stringToChar } = require("./src/utils");
 const BufferString = require("./src/bufferstring");
 
 // SYMBOLS & TOKENS
-const END_EXPR = Symbol("T_END_EXPR");
-const FUNC_OPEN = Symbol("T_FUNC_OPEN");
-const VAR_DECLARATION = Symbol("T_VAR_DECLARATION");
-const LET_DECLARATION = Symbol("T_LET_DECLARATION");
-const CONST_DECLARATION = Symbol("T_CONST_DECLARATION");
-const CHARS = Symbol("T_CHARS");
-const OPERATOR = Symbol("T_OPERATOR");
-
-const TOKENS = Object.freeze({
-    END_EXPR,
-    FUNC_OPEN,
-    VAR_DECLARATION,
-    LET_DECLARATION,
-    CONST_DECLARATION,
-    CHARS,
-    OPERATOR
-});
+const T_KEYWORD = Symbol("T_KEYWORD");
+const T_IDENTIFIER = Symbol("T_IDENTIFIER");
+const T_SYMBOL = Symbol("T_SYMBOL");
 
 // CHARACTERS & KEYWORDS
 const C_SPACE = " ".charCodeAt(0);
@@ -52,46 +38,39 @@ function* lex(buf) {
         }
 
         if (OPERATORS.has(char)) {
-            const currValue = t8.currValue;
-            if (currValue !== null) {
-                yield sendToken(TOKENS.CHARS, currValue);
+            if (t8.currLen > 0) {
+                yield sendToken(T_IDENTIFIER, t8.currValue);
             }
-            yield sendToken(TOKENS.OPERATOR, char);
+            yield sendToken(T_SYMBOL, char);
         }
         else if (WIDE_CHARACTHER.has(char)) {
             t8.add(char);
-            const currValue = t8.currValue;
-            if (currValue === null) {
-                continue;
-            }
             
-            if (compareU8Arr(currValue, KEYWORD_VAR)) {
-                yield sendToken(TOKENS.VAR_DECLARATION);
+            if (t8.compare(KEYWORD_VAR)) {
+                yield sendToken(T_KEYWORD, KEYWORD_VAR);
             }
-            else if (compareU8Arr(currValue, KEYWORD_LET)) {
-                yield sendToken(TOKENS.LET_DECLARATION);
+            else if (t8.compare(KEYWORD_LET)) {
+                yield sendToken(T_KEYWORD, KEYWORD_LET);
             }
-            else if (compareU8Arr(currValue, KEYWORD_CONST)) {
-                yield sendToken(TOKENS.CONST_DECLARATION);
+            else if (t8.compare(KEYWORD_CONST)) {
+                yield sendToken(T_KEYWORD, KEYWORD_CONST);
             }
-            else if (compareU8Arr(currValue, KEYWORD_FUNCTION)) {
-                yield sendToken(TOKENS.FUNC_OPEN);
+            else if (t8.compare(KEYWORD_FUNCTION)) {
+                yield sendToken(T_KEYWORD, KEYWORD_FUNCTION);
             }
         }
         else if (char === C_ENDLINE) {
-            const currValue = t8.currValue;
-            if (currValue !== null) {
-                yield sendToken(TOKENS.CHARS, currValue);
+            if (t8.currLen > 0) {
+                yield sendToken(T_IDENTIFIER, t8.currValue);
             }
-            yield sendToken(TOKENS.END_EXPR);
+            yield sendToken(T_SYMBOL, C_ENDLINE);
         }
         else {
-            const currValue = t8.currValue;
-            if (currValue === null) {
+            if (t8.currLen === 0) {
                 continue;
             }
 
-            yield sendToken(TOKENS.CHARS, currValue);
+            yield sendToken(T_IDENTIFIER, t8.currValue);
         }
     }
 }
@@ -99,6 +78,12 @@ function* lex(buf) {
 const buf = readFileSync("./sources/test.js");
 console.time("lex");
 for (const [token, value] of lex(buf)) {
-    console.log(token, value instanceof Uint8Array ? String.fromCharCode(...value) : value);
+    if (value instanceof Uint8Array) {
+        console.log(token, String.fromCharCode(...value));
+    }
+    else {
+        const tValue = typeof value === "number" ? String.fromCharCode(value) : value;
+        console.log(token, tValue);
+    }
 }
 console.timeEnd("lex");
