@@ -18,65 +18,64 @@ const KEYWORD_FUNCTION = stringToChar("function");
 const KEYWORD_VAR = stringToChar("var");
 const KEYWORD_LET = stringToChar("let");
 const KEYWORD_CONST = stringToChar("const");
+const KEYWORDS = [KEYWORD_VAR, KEYWORD_CONST, KEYWORD_LET, KEYWORD_FUNCTION];
 
 // CONSTANTS
-const WIDE_CHARACTHER = ASCIISet([48, 57], [65, 90], [97, 122], 95, 36);
+const WIDE_CHARACTHER = ASCIISet([48, 57], [65, 90], [97, 122], 95, 36, 39, 34);
 const OPERATORS = new Set([61, 43, 45, 69, 76]);
+
+/**
+ * @func isKeyword
+ * @param {!BufferString} bufString 
+ * @returns {boolean}
+ */
+function isKeyword(bufString) {
+    for (let i = 0; i < KEYWORDS.length; i++) {
+        if (bufString.compare(KEYWORDS[i])) {
+            return [true, KEYWORDS[i]];
+        }
+    }
+
+    return [false, null];
+}
 
 function* lex(buf) {
     const t8 = new BufferString();
-    const sendToken = (token, value = null) => {
-        t8.reset();
-
-        return [token, value];
-    }
 
     for (let i = 0; i < buf.length; i++) {
         const char = buf[i];
-        if (char === C_SPACE) {
+        if (WIDE_CHARACTHER.has(char)) {
+            t8.add(char);
             continue;
         }
 
-        if (OPERATORS.has(char)) {
-            if (t8.currLen > 0) {
-                yield sendToken(T_IDENTIFIER, t8.currValue);
+        if (t8.length > 0) {
+            const [currIsKeyword, u8Keyword] = isKeyword(t8);
+            if (currIsKeyword) {
+                t8.reset();
+                yield [T_KEYWORD, u8Keyword];
+                continue;
             }
-            yield sendToken(T_SYMBOL, char);
-        }
-        else if (WIDE_CHARACTHER.has(char)) {
-            t8.add(char);
-            
-            if (t8.compare(KEYWORD_VAR)) {
-                yield sendToken(T_KEYWORD, KEYWORD_VAR);
-            }
-            else if (t8.compare(KEYWORD_LET)) {
-                yield sendToken(T_KEYWORD, KEYWORD_LET);
-            }
-            else if (t8.compare(KEYWORD_CONST)) {
-                yield sendToken(T_KEYWORD, KEYWORD_CONST);
-            }
-            else if (t8.compare(KEYWORD_FUNCTION)) {
-                yield sendToken(T_KEYWORD, KEYWORD_FUNCTION);
-            }
-        }
-        else if (char === C_ENDLINE) {
-            if (t8.currLen > 0) {
-                yield sendToken(T_IDENTIFIER, t8.currValue);
-            }
-            yield sendToken(T_SYMBOL, C_ENDLINE);
-        }
-        else {
-            if (t8.currLen === 0) {
+            if (char === C_SPACE) {
+                t8.add(char);
                 continue;
             }
 
-            yield sendToken(T_IDENTIFIER, t8.currValue);
+            const currValue = t8.currValue;
+            t8.reset();
+            yield [T_IDENTIFIER, currValue];
+        }
+
+        if (char === C_ENDLINE) {
+            yield [T_SYMBOL, C_ENDLINE];
+        }
+        else if (OPERATORS.has(char)) {
+            yield [T_SYMBOL, char];
         }
     }
 }
 
 const buf = readFileSync("./sources/test.js");
-console.time("lex");
 for (const [token, value] of lex(buf)) {
     if (value instanceof Uint8Array) {
         console.log(token, String.fromCharCode(...value));
@@ -85,5 +84,10 @@ for (const [token, value] of lex(buf)) {
         const tValue = typeof value === "number" ? String.fromCharCode(value) : value;
         console.log(token, tValue);
     }
+}
+
+console.time("lex");
+for (const ret of lex(buf)) {
+
 }
 console.timeEnd("lex");

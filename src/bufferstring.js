@@ -29,6 +29,10 @@ class BufferString {
         return true;
     }
 
+    get length() {
+        return this.currLen;
+    }
+
     get currValue() {
         if (this.currLen === 0) {
             return null;
