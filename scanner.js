@@ -1,5 +1,6 @@
 // Require Node.js Dependencies
 const { readFileSync } = require("fs");
+const { PerformanceObserver, performance } = require("perf_hooks");
 
 // Require Internal Dependencies
 const { ASCIISet, stringToChar } = require("./src/utils");
@@ -20,7 +21,7 @@ const KEYWORD_CONST = stringToChar("const");
 const KEYWORD_RETURN = stringToChar("return");
 
 // CONSTANTS
-const WIDE_CHARACTHER = ASCIISet([48, 57], [65, 90], [97, 122], 95, 36, 39, 34);
+const WIDE_CHARS = ASCIISet([48, 57], [65, 90], [97, 122], 95, 36, 39, 34);
 const OPERATORS = new Set([61, 43, 45, 69, 76]);
 const KEYWORDS = [KEYWORD_VAR, KEYWORD_CONST, KEYWORD_LET, KEYWORD_FUNCTION, KEYWORD_RETURN];
 const SYMBOLS = new Set([";", "{", "}", "(", ")"].map((char) => char.charCodeAt(0)));
@@ -45,7 +46,7 @@ function* lex(buf) {
 
     for (let i = 0; i < buf.length; i++) {
         const char = buf[i];
-        if (WIDE_CHARACTHER.has(char)) {
+        if (WIDE_CHARS.has(char)) {
             t8.add(char);
             continue;
         }
@@ -77,6 +78,8 @@ function* lex(buf) {
 }
 
 const buf = readFileSync("./sources/test.js");
+console.log(`Tokenize ./sources/test.js\n`);
+
 for (const [token, value] of lex(buf)) {
     if (value instanceof Uint8Array) {
         console.log(token, String.fromCharCode(...value));
@@ -86,3 +89,19 @@ for (const [token, value] of lex(buf)) {
         console.log(token, tValue);
     }
 }
+
+const obs = new PerformanceObserver((items) => {
+    const entry = items.getEntries()[0];
+    console.log(`${entry.name} >> ${entry.duration} ms`);
+    performance.clearMarks();
+});
+obs.observe({ entryTypes: ["measure"] });
+
+  
+for (const ret of lex(buf)) {}
+for (const ret of lex(buf)) {}
+
+performance.mark("start");
+for (const ret of lex(buf)) {}
+performance.mark("end");
+performance.measure("Lex perf", "start", "end");
