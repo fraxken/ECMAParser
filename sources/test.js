@@ -1,5 +1,8 @@
 var variable = "hello world";
 
-function hello() {
+function hello(var1) {
     const bar = 10;
+
+    return bar + var1;
 }
+hello();

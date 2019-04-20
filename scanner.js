@@ -12,17 +12,18 @@ const T_SYMBOL = Symbol("T_SYMBOL");
 
 // CHARACTERS & KEYWORDS
 const C_SPACE = " ".charCodeAt(0);
-const C_ENDLINE = ";".charCodeAt(0);
 
 const KEYWORD_FUNCTION = stringToChar("function");
 const KEYWORD_VAR = stringToChar("var");
 const KEYWORD_LET = stringToChar("let");
 const KEYWORD_CONST = stringToChar("const");
-const KEYWORDS = [KEYWORD_VAR, KEYWORD_CONST, KEYWORD_LET, KEYWORD_FUNCTION];
+const KEYWORD_RETURN = stringToChar("return");
 
 // CONSTANTS
 const WIDE_CHARACTHER = ASCIISet([48, 57], [65, 90], [97, 122], 95, 36, 39, 34);
 const OPERATORS = new Set([61, 43, 45, 69, 76]);
+const KEYWORDS = [KEYWORD_VAR, KEYWORD_CONST, KEYWORD_LET, KEYWORD_FUNCTION, KEYWORD_RETURN];
+const SYMBOLS = new Set([";", "{", "}", "(", ")"].map((char) => char.charCodeAt(0)));
 
 /**
  * @func isKeyword
@@ -66,8 +67,8 @@ function* lex(buf) {
             yield [T_IDENTIFIER, currValue];
         }
 
-        if (char === C_ENDLINE) {
-            yield [T_SYMBOL, C_ENDLINE];
+        if (SYMBOLS.has(char)) {
+            yield [T_SYMBOL, char];
         }
         else if (OPERATORS.has(char)) {
             yield [T_SYMBOL, char];
@@ -85,9 +86,3 @@ for (const [token, value] of lex(buf)) {
         console.log(token, tValue);
     }
 }
-
-console.time("lex");
-for (const ret of lex(buf)) {
-
-}
-console.timeEnd("lex");

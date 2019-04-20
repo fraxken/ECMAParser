@@ -1,4 +1,6 @@
+// COSNTANTS
 const U8_LEN = 255;
+const C_SPACE = " ".charCodeAt(0);
 
 class BufferString {
     constructor() {
@@ -38,7 +40,8 @@ class BufferString {
             return null;
         }
 
-        return this.u8Arr.slice(0, this.currLen);
+        const sliceLen = this.u8Arr[this.currLen - 1] === C_SPACE ? this.currLen - 1 : this.currLen;
+        return this.u8Arr.slice(0, sliceLen);
     }
 
     reset() {
